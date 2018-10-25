@@ -1,13 +1,12 @@
 <resources>
     <string name="app_name">Space 聊天室</string>
 
-    <!-- TODO: Remove or change this placeholder text -->
-    <string name="hello_blank_fragment">Hello blank fragment</string>
-    <string name="title_activity_login">加入</string>
+    <string name="title_activity_login">加入聊天室</string>
 
     <!-- Strings related to login -->
     <string name="prompt_name">输入昵称</string>
     <string name="action_sign_in">加入</string>
+    <string name="error_field_required">字段不可为空</string>
 
     <string name="user_action_typing">正在输入..</string>
     <string name="send_button">发送</string>
@@ -16,15 +15,17 @@
     <string name="clear_screen">清屏</string>
     <string name="disconnect">断开连接</string>
 
-    <string name="connected">Connected</string>
+    <string name="connected">已连接成功</string>
     <string name="disconnected">Disconnected, Please check your internet connection</string>
-    <string name="error_connect">Failed to connect</string>
+    <string name="error_connect">服务器连接失败！</string>
 
-    <string name="message_user_joined">%s joined</string>
-    <string name="message_user_left">%s left</string>
+    <string name="message_user_joined">%s 已加入</string>
+    <string name="message_user_left">%s 已离开</string>
 
     <plurals name="message_participants">
-        <item quantity="one">there\'s %d participant</item>
-        <item quantity="other">there are %d participants</item>
+        <item quantity="one">有 %d 参与者</item>
+        <item quantity="other">有 %d 参与者</item>
     </plurals>
+
+    <string name="message_welcome">欢迎来到 Space 聊天室</string>
 </resources>

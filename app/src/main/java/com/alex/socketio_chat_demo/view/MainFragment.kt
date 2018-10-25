@@ -1,20 +1,32 @@
 package com.alex.socketio_chat_demo.view
 
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.support.v4.app.Fragment
+import android.support.v7.widget.LinearLayoutManager
 import android.support.v7.widget.RecyclerView
+import android.text.Editable
+import android.text.TextUtils
+import android.text.TextWatcher
 import android.util.Log
 import android.view.*
+import android.view.inputmethod.EditorInfo
+import android.widget.EditText
+import android.widget.ImageButton
+import android.widget.TextView
 import android.widget.Toast
 import com.alex.socketio_chat_demo.ChatApplication
 import com.alex.socketio_chat_demo.Constants
 import com.alex.socketio_chat_demo.R
 import com.alex.socketio_chat_demo.support.Message
+import com.alex.socketio_chat_demo.support.MessageAdapter
 import io.socket.client.Socket
 import io.socket.emitter.Emitter
+import kotlinx.android.synthetic.main.activity_login.*
+import kotlinx.android.synthetic.main.fragment_main.*
 import org.json.JSONException
 import org.json.JSONObject
 
@@ -43,6 +55,10 @@ class MainFragment : Fragment() {
 
     override fun onAttach(context: Context?) {
         super.onAttach(context)
+        mAdapter = MessageAdapter(context, mMessages)
+        if (context is Activity) {
+            //this.listener = (MainActivity) context;
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -70,10 +86,41 @@ class MainFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        messagesView.layoutManager = LinearLayoutManager(activity)
+        messagesView.adapter = mAdapter
+
+        message_input.setOnEditorActionListener(TextView.OnEditorActionListener { _, id, _ ->
+            if (id == R.id.send_button || id == EditorInfo.IME_NULL) {
+                attemptSend()
+                return@OnEditorActionListener true
+            }
+            false
+        })
+        message_input.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {}
+
+            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
+                if (null == mUsername) return
+                if (mSocket?.connected()==false) return
+
+                if (!mTyping) {
+                    mTyping = true
+                    mSocket?.emit(Constants.EVENT_TYPING)
+                }
+
+                mTypingHandler.removeCallbacks(onTypingTimeout)
+                mTypingHandler.postDelayed(onTypingTimeout, TYPING_TIMER_LENGTH.toLong())
+            }
+
+            override fun afterTextChanged(s: Editable) {}
+        })
+
+        send_button.setOnClickListener { attemptSend() }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        return super.onCreateView(inflater, container, savedInstanceState)
+        return inflater.inflate(R.layout.fragment_main, container, false)
     }
 
     override fun onDestroy() {
@@ -95,16 +142,54 @@ class MainFragment : Fragment() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (Activity.RESULT_OK != resultCode) {
+            activity!!.finish()
+            return
+        }
+
+        mUsername = data?.getStringExtra("username")
+        val numUsers = data?.getIntExtra("numUsers", 1)
+
+        addLog(resources.getString(R.string.message_welcome))
+        addParticipantsLog(numUsers!!)
     }
 
     override fun onCreateOptionsMenu(menu: Menu?, inflater: MenuInflater?) {
         inflater?.inflate(R.menu.menu_main, menu)
     }
 
+    /**
+     * 菜单选项 TODO
+     */
     override fun onOptionsItemSelected(item: MenuItem?): Boolean {
         return super.onOptionsItemSelected(item)
     }
 
+    /**
+     * 发送消息
+     */
+    private fun attemptSend() {
+        if (null == mUsername) return
+        if (mSocket?.connected()==false) return
+
+        mTyping = false
+
+        val message = message_input.text.trim({ it <= ' ' })
+        if (TextUtils.isEmpty(message)) {
+            message_input.requestFocus()
+            return
+        }
+
+        message_input.setText("")
+        addMessage(mUsername!!, message.toString())
+
+        // perform the sending message attempt.
+        mSocket?.emit(Constants.EVENT_NEW_MESSAGE, message)
+    }
+
+    /**
+     * 用户登录页
+     */
     private fun startSignIn() {
         mUsername = null
         val intent = Intent(activity, LoginActivity::class.java)
@@ -234,7 +319,7 @@ class MainFragment : Fragment() {
     private fun addLog(message: String) {
         mMessages.add(Message.Builder(Message.TYPE_LOG)
                 .message(message).build())
-        mAdapter.notifyItemInserted(mMessages.size - 1)
+        mAdapter?.notifyItemInserted(mMessages.size - 1)
         scrollToBottom()
     }
 
@@ -245,14 +330,14 @@ class MainFragment : Fragment() {
     private fun addMessage(username: String, message: String) {
         mMessages.add(Message.Builder(Message.TYPE_MESSAGE)
                 .username(username).message(message).build())
-        mAdapter.notifyItemInserted(mMessages.size - 1)
+        mAdapter?.notifyItemInserted(mMessages.size - 1)
         scrollToBottom()
     }
 
     private fun addTyping(username: String) {
         mMessages.add(Message.Builder(Message.TYPE_ACTION)
                 .username(username).build())
-        mAdapter.notifyItemInserted(mMessages.size - 1)
+        mAdapter?.notifyItemInserted(mMessages.size - 1)
         scrollToBottom()
     }
 
@@ -261,9 +346,13 @@ class MainFragment : Fragment() {
             val message = mMessages[i]
             if (message.type == Message.TYPE_ACTION && message.username.equals(username)) {
                 mMessages.removeAt(i)
-                mAdapter.notifyItemRemoved(i)
+                mAdapter?.notifyItemRemoved(i)
             }
         }
+    }
+
+    private fun scrollToBottom() {
+        messagesView.scrollToPosition(mAdapter?.itemCount!!.minus(1))
     }
 
 

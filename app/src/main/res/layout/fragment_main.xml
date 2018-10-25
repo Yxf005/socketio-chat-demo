@@ -7,7 +7,7 @@
     tools:context=".view.MainFragment">
 
     <android.support.v7.widget.RecyclerView
-        android:id="@+id/messages"
+        android:id="@+id/messagesView"
         android:layout_width="match_parent"
         android:layout_weight="1"
         android:layout_height="0dp"
@@ -15,6 +15,7 @@
         android:paddingRight="@dimen/activity_horizontal_margin"
         android:scrollbars="vertical"
         android:scrollbarStyle="outsideOverlay"/>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
@@ -25,7 +26,7 @@
 
         <EditText
             android:id="@+id/message_input"
-            android:layout_width="200dp"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:hint="@string/prompt_msg"
@@ -37,7 +38,7 @@
             android:singleLine="true" />
 
         <Button
-            android:id="@+id/button"
+            android:id="@+id/send_button"
             style="@style/Widget.AppCompat.Button.Small"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
